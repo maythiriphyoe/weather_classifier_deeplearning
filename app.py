@@ -11,7 +11,7 @@ CLASSES = ['cloudy', 'rainy', 'shiny', 'sunrise']
 
 def build_local_model():
     model = models.Sequential([
-        # We explicitly provide the input shape here to instantiate the layer shapes immediately
+        
         layers.Input(shape=(150, 150, 3)),
         layers.Rescaling(1./255),
         
@@ -34,7 +34,7 @@ def build_local_model():
     ])
     return model
 
-# 2. Initialize the empty layout and load the raw weights matrix safely
+
 model = build_local_model()
 model.load_weights('weather_cnn.weights.h5')
 
