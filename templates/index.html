@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather Classifier</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: #f4f6f9;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .container {
+            background: white;
+            padding: 35px 30px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            text-align: center;
+            max-width: 440px;
+            width: 100%;
+        }
+        h2 { color: #2c3e50; margin: 0 0 8px 0; font-size: 26px; }
+        
+        /* Description text formatting */
+        .description {
+            font-size: 14px;
+            color: #7f8c8d;
+            line-height: 1.5;
+            margin-bottom: 25px;
+        }
+        .badge-container {
+            margin-top: 8px;
+        }
+        .badge {
+            display: inline-block;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 3px 8px;
+            background: #eaeded;
+            color: #7f8c8d;
+            border-radius: 12px;
+            margin: 2px;
+        }
+
+        input[type="file"] { display: none; }
+        .file-label {
+            display: inline-block;
+            padding: 12px 24px;
+            background: #3498db;
+            color: white;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            margin-bottom: 12px;
+            transition: all 0.2s ease;
+        }
+        .file-label:hover { background: #2980b9; transform: translateY(-1px); }
+        
+        .preview-wrapper {
+            margin: 15px 0;
+            display: none;
+            justify-content: center;
+        }
+        .preview-img {
+            max-width: 100%;
+            max-height: 200px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            object-fit: cover;
+        }
+
+        button {
+            display: block;
+            width: 100%;
+            padding: 13px;
+            background: #2ecc71;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+            margin-top: 15px;
+        }
+        button:hover { background: #27ae60; }
+
+        /* Enhanced Dynamic Result Box */
+        #result-box {
+            margin-top: 25px;
+            padding: 18px;
+            border-radius: 10px;
+            background: #f8f9fa;
+            display: none;
+            text-align: left;
+            transition: all 0.3s ease;
+            border-left: 5px solid #bdc3c7;
+        }
+        .result-title {
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #7f8c8d;
+            margin-bottom: 4px;
+        }
+        #prediction-text {
+            font-size: 22px;
+            font-weight: 700;
+            color: #2c3e50;
+            text-transform: capitalize;
+        }
+        #confidence-text {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        .filename { font-size: 13px; color: #95a5a6; margin-bottom: 15px; }
+
+        /* Supplemental Section: Model Specs Dashboard */
+        .specs-link {
+            font-size: 12px;
+            color: #3498db;
+            text-decoration: none;
+            display: inline-block;
+            margin-top: 25px;
+            cursor: pointer;
+        }
+        #specs-panel {
+            margin-top: 12px;
+            background: #fcfcfd;
+            border: 1px dashed #dcdde1;
+            border-radius: 8px;
+            padding: 12px;
+            font-size: 12px;
+            color: #616e7c;
+            display: none;
+            text-align: left;
+        }
+        .spec-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+        .spec-row:last-child { margin-bottom: 0; }
+        .spec-value { font-weight: 600; color: #2c3e50; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Weather Classifier AI</h2>
+    
+    <div class="description">
+        This classifier uses a custom Deep Learning Convolutional Neural Network (CNN) to categorize weather patterns into four meteorological classes.
+        <div class="badge-container">
+            <span class="badge">☁️ Cloudy</span>
+            <span class="badge">🌧️ Rainy</span>
+            <span class="badge">☀️ Shiny</span>
+            <span class="badge">🌅 Sunrise</span>
+        </div>
+    </div>
+    
+    <form id="upload-form">
+        <label for="file-picker" class="file-label">Choose Weather Image</label>
+        <input type="file" id="file-picker" accept="image/*" required>
+        <div id="file-name" class="filename">No file selected</div>
+        
+        <div id="preview-container" class="preview-wrapper">
+            <img id="image-preview" class="preview-img" src="#" alt="Image Preview">
+        </div>
+        
+        <button type="submit" id="submit-btn">Analyze Image</button>
+    </form>
+
+    <div id="result-box">
+        <div class="result-title">Classification Result</div>
+        <div id="prediction-text">Analyzing...</div>
+        <div style="font-size: 14px; margin-top: 6px; color: #576574;">
+            Confidence Level: <span id="confidence-text">-</span>
+        </div>
+    </div>
+
+    <a class="specs-link" id="toggle-specs">View Model Architecture Specs</a>
+    <div id="specs-panel">
+        <div class="spec-row"><span>Framework:</span><span class="spec-value">TensorFlow Keras API</span></div>
+        <div class="spec-row"><span>Topology:</span><span class="spec-value">4x Conv2D Layers + Dropout</span></div>
+        <div class="spec-row"><span>Input Matrix Dimensions:</span><span class="spec-value">150 × 150 × 3 (RGB)</span></div>
+        <div class="spec-row"><span>Optimization Loop Length:</span><span class="spec-value">30 Epochs</span></div>
+        <div class="spec-row"><span>Validation Target Accuracy:</span><span class="spec-value">~89.2% Score</span></div>
+    </div>
+</div>
+
+<script>
+    const filePicker = document.getElementById('file-picker');
+    const fileNameDiv = document.getElementById('file-name');
+    const previewContainer = document.getElementById('preview-container');
+    const imagePreview = document.getElementById('image-preview');
+    const uploadForm = document.getElementById('upload-form');
+    const resultBox = document.getElementById('result-box');
+    const predictionText = document.getElementById('prediction-text');
+    const confidenceText = document.getElementById('confidence-text');
+    const submitBtn = document.getElementById('submit-btn');
+    const toggleSpecs = document.getElementById('toggle-specs');
+    const specsPanel = document.getElementById('specs-panel');
+
+    // Handle local image file previews
+    filePicker.addEventListener('change', () => {
+        const file = filePicker.files[0];
+        if (file) {
+            fileNameDiv.textContent = file.name;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                imagePreview.src = e.target.result;
+                previewContainer.style.display = 'flex';
+            }
+            reader.readAsDataURL(file);
+            resultBox.style.display = "none";
+            // Reset background transitions
+            resultBox.style.background = "#f8f9fa";
+            resultBox.style.borderLeftColor = "#bdc3c7";
+        }
+    });
+
+    // Toggle logic for the specifications drawer module
+    toggleSpecs.addEventListener('click', () => {
+        if (specsPanel.style.display === 'block') {
+            specsPanel.style.display = 'none';
+            toggleSpecs.textContent = "📊 View Model Architecture Specs";
+        } else {
+            specsPanel.style.display = 'block';
+            toggleSpecs.textContent = "✖ Hide Architecture Specs";
+        }
+    });
+
+    // Handle asynchronous inference submission pipeline
+    uploadForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const formData = new FormData();
+        formData.append('file', filePicker.files[0]);
+
+        submitBtn.disabled = true;
+        submitBtn.textContent = "Processing Matrix...";
+        predictionText.textContent = "Analyzing Patterns...";
+        confidenceText.textContent = "...";
+        resultBox.style.display = "block";
+
+        try {
+            const response = await fetch('/predict', {
+                method: 'POST',
+                body: formData
+            });
+            const data = await response.json();
+
+            if (data.success) {
+                const weatherClass = data.prediction.toLowerCase();
+                predictionText.textContent = weatherClass; // Handled nicely by text-transform: capitalize CSS
+                confidenceText.textContent = data.confidence;
+
+                // UI Supplement 2: Dynamic color theme switches based on output category string mapping
+                if (weatherClass === 'rainy') {
+                    resultBox.style.background = '#ebf5fb';
+                    resultBox.style.borderLeftColor = '#2980b9';
+                } else if (weatherClass === 'shiny' || weatherClass === 'sunrise') {
+                    resultBox.style.background = '#fef9e7';
+                    resultBox.style.borderLeftColor = '#f1c40f';
+                } else if (weatherClass === 'cloudy') {
+                    resultBox.style.background = '#f2f4f4';
+                    resultBox.style.borderLeftColor = '#7f8c8d';
+                }
+            } else {
+                predictionText.textContent = "Error Encountered";
+                confidenceText.textContent = data.error || "Execution broken";
+                resultBox.style.background = '#fdebd0';
+                resultBox.style.borderLeftColor = '#e67e22';
+            }
+        } catch (error) {
+            predictionText.textContent = "Network Error";
+            confidenceText.textContent = "Server unreachable.";
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.textContent = "Analyze Image";
+        }
+    });
+</script>
+
+</body>
+</html>
